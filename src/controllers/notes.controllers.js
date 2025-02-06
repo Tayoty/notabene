@@ -1,13 +1,7 @@
 const note = require('../models/notes.models');
-const {v4 = uuidv4} = require('uuid'); 
-
 
 exports.noteCreate = async (req, res) => {
-    const{
-        NoteTitle,
-        Description, 
-        NoteBody, 
-    } = req.body
+    const{NoteTitle, Description, NoteBody} = req.body
 
     //Check the Note length before saving 
     try{
@@ -21,23 +15,21 @@ exports.noteCreate = async (req, res) => {
             .status (400)
             .json({message: 'Please input the Note Title and Description'})
 
-         //Generate a new note ID using uuid
-        const NoteID = `NOTE-${uuidv4.slice(0,4)}`.toUpperCase(); 
+       
 
          const newNote = new note ({
             NoteTitle,
             Description, 
             NoteBody, 
-            NoteID
-         }); 
+}); 
 
          await newNote.save(); 
          return res
          .status (201)
-         .json({message: 'Note Saved'});
+         .json({message: 'Note Saved', data: newNote});
 
     } catch(error){
-        console.error(); 
+        console.error('Error creating note', error); 
         return res
         .status(500)
         .json({message: 'Server error'})
@@ -46,19 +38,19 @@ exports.noteCreate = async (req, res) => {
 };
 
 exports.noteDelete = async (req, res) => {
-    const {NoteID} = req.query
+    const {_id} = req.query
        try{
-           const deletebyID = await note.findOneDelete({NoteID}); 
+           const deletebyID = await note.findOneAndDelete({_id}); 
 
          if(!deletebyID) {
             return res
-            .status (400)
+            .status (404)
             .json({message: 'Note not found'}); 
          }
 
           return res
           .status (200)
-          .json({data: deletebyID}); 
+          .json({message: 'Note Deleted'}); 
 
         } catch(error) { 
           console.error(error); 
@@ -69,23 +61,29 @@ exports.noteDelete = async (req, res) => {
 };
 
 exports.noteEdit = async (req, res) => {
+    const {NoteTitle, Description, NoteBody} = req.body;
     try{ 
-        const editNote = await note.findOne({NoteTitle}); 
+        const editNote = await note.findOneAndUpdate(
+            {NoteTitle}, 
+            {
+                NoteTitle,
+                Description,
+                NoteBody, 
+            },
+            {isNew: true}
+        ); 
+
         if (!editNote) {
             return res
                 .status (404)
                 .json({message: 'Note not Found'}); 
         }
-        const {NoteTitle, NoteBody, Description} = req.body
-        note.NoteTitle = NoteTitle || note.NoteTitle
-        note.Notebody = NoteBody || note.NoteBody
-        note.Description = Description || note.Description 
+       
 
-        await note.save();
+        await editNote.save();
          return res
          .status(200)
          .json({data: editNote, message: 'Note Updated'}); 
-
         
     } catch(error) {
         console.error(error); 
@@ -116,9 +114,9 @@ exports.viewAll = async (req, res) => {
 };
 
 exports.searchAll = async (req, res) => {
-    const { noteTitle } = req.query;
+    const { NoteTitle } = req.query;
     try {
-        const searchAll = await note.findOne({ noteTitle });
+        const searchAll = await note.findOne({ NoteTitle });
         if (!searchAll) {
             return res
                 .status(404)
