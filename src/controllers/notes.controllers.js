@@ -62,9 +62,10 @@ exports.noteDelete = async (req, res) => {
 
 exports.noteEdit = async (req, res) => {
     const {NoteTitle, Description, NoteBody} = req.body;
+    const {_id} = req.query;
     try{ 
         const editNote = await note.findOneAndUpdate(
-            {NoteTitle}, 
+            {_id}, 
             {
                 NoteTitle,
                 Description,
@@ -96,11 +97,6 @@ exports.noteEdit = async (req, res) => {
 exports.viewAll = async (req, res) => {
     try {
         const viewAll = await note.find().sort({ createdAt: 1 });
-        if (!viewAll || viewAll.length === 0) {
-            return res
-                .status(404)
-                .json({ message: 'Notes Empty; Create a new Note' });
-        }
         return res
             .status(200)
             .json({ data: viewAll, length: viewAll.length });
